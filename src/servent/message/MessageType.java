@@ -1,0 +1,5 @@
+package servent.message;
+
+public enum MessageType {
+	POISON, TRANSACTION, ACHARYA_ASK_AMOUNT, ACHARYA_TELL_AMOUNT, ALAGAR_ASK_AMOUNT, ALAGAR_TELL_AMOUNT
+}
