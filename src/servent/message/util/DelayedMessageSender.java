@@ -1,12 +1,12 @@
 package servent.message.util;
 
-import java.io.IOException;
-import java.io.ObjectOutputStream;
-import java.net.Socket;
-
 import app.AppConfig;
 import app.ServentInfo;
 import servent.message.Message;
+
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.net.Socket;
 
 /**
  * This worker sends a message asynchronously. Doing this in a separate thread
@@ -39,32 +39,33 @@ public class DelayedMessageSender implements Runnable {
 		if (MessageUtil.MESSAGE_UTIL_PRINTING) {
 			AppConfig.timestampedStandardPrint("Sending message " + messageToSend);
 		}
-		
-		try {
-			/*
-			 * Similar sync block to the one in FifoSenderWorker, except this one is
-			 * related to Lai-Yang. We want to be sure that message color is red if we
-			 * are red. Just setting the attribute when we were making the message may
-			 * have been to early.
-			 * All messages that declare their own stuff (eg. LYTellMessage) will have
-			 * to override setRedColor() because of this.
-			 */
-			synchronized (AppConfig.colorLock) {
-				if (AppConfig.isWhite.get() == false) {
-					messageToSend = messageToSend.setRedColor();
-				}
+
+		//Pokusavamo vise puta da posaljemo poruku
+		int retryCount = 0;
+		while (true) {
+			try {
 				Socket sendSocket = new Socket(receiverInfo.getIpAddress(), receiverInfo.getListenerPort());
-				
+
 				ObjectOutputStream oos = new ObjectOutputStream(sendSocket.getOutputStream());
 				oos.writeObject(messageToSend);
 				oos.flush();
-				
+
 				sendSocket.close();
-				
+
 				messageToSend.sendEffect();
+
+				break;
+			} catch (IOException e) {
+				retryCount += 1;
+				if (retryCount > MessageUtil.SEND_RETRY_LIMIT) {
+					AppConfig.timestampedErrorPrint("Couldn't send message: " + messageToSend.toString() + ". No more retries.");
+					break;
+				} else {
+					String text = String.format("Couldn't send message: %s. Retrying %s/%s.",
+							messageToSend.toString(), retryCount, MessageUtil.SEND_RETRY_LIMIT);
+					AppConfig.timestampedErrorPrint(text);
+				}
 			}
-		} catch (IOException e) {
-			AppConfig.timestampedErrorPrint("Couldn't send message: " + messageToSend.toString());
 		}
 	}
 	

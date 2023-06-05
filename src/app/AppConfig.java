@@ -9,7 +9,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Properties;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import app.snapshot_bitcake.SnapshotType;
 
@@ -49,9 +48,6 @@ public class AppConfig {
 	 * </ul>
 	 */
 	public static SnapshotType SNAPSHOT_TYPE;
-	
-	public static AtomicBoolean isWhite = new AtomicBoolean(true);
-	public static Object colorLock = new Object();
 	
 	/**
 	 * Print a message to stdout with a timestamp
@@ -178,7 +174,6 @@ public class AppConfig {
 			ServentInfo newInfo = new ServentInfo("localhost", i, serventPort, neighborList);
 			serventInfoList.add(newInfo);
 		}
-		CausalBroadcastShared.initializeVectorClock(serventCount);
 	}
 	
 	/**

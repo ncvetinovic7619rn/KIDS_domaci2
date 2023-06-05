@@ -4,8 +4,11 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import app.AppConfig;
 import app.CausalBroadcastShared;
+import app.ServentInfo;
 import servent.message.Message;
+import servent.message.util.MessageUtil;
 
 /**
  * Handles the CAUSAL_BROADCAST message. Fairly simple, as we assume that we are
@@ -16,14 +19,11 @@ import servent.message.Message;
  *
  */
 public class CausalBroadcastHandler implements MessageHandler {
-
+	private static Set<Message> recievedBroadcasts = Collections.newSetFromMap(new ConcurrentHashMap<>());
 	private final Message clientMessage;
-	private final Set<Message> recievedBroadcasts;
-	private final Object lock;
-	public CausalBroadcastHandler(Message clientMessage, Object lock) {
+
+	public CausalBroadcastHandler(Message clientMessage) {
 		this.clientMessage = clientMessage;
-		this.recievedBroadcasts = Collections.newSetFromMap(new ConcurrentHashMap<Message, Boolean>());
-		this.lock = lock;
 	}
 
 	@Override
@@ -33,25 +33,34 @@ public class CausalBroadcastHandler implements MessageHandler {
 		 * Same print as the one in BROADCAST handler. Kind of useless here, as we
 		 * assume a clique.
 		 */
+		ServentInfo senderInfo = clientMessage.getOriginalSenderInfo();
 
+//    			String text = String.format("Got %s from %s causally broadcast by %s\n", clientMessage.getMessageText(),
+//    					lastSenderInfo, senderInfo);
+//    			AppConfig.timestampedStandardPrint(text);
+
+		if (senderInfo.getId() != AppConfig.myServentInfo.getId()) {
+			if (recievedBroadcasts.add(clientMessage)) {
+				ServentInfo lastSenderInfo = clientMessage.getRoute().isEmpty() ? clientMessage.getOriginalSenderInfo()
+						: clientMessage.getRoute().get(clientMessage.getRoute().size() - 1);
+
+				for (Integer neighbor : AppConfig.myServentInfo.getNeighbors()) {
+					if (neighbor == lastSenderInfo.getId()) {
+						continue;
+					}
+					MessageUtil.sendMessage(clientMessage.changeReceiver(neighbor).makeMeASender());
+				}
+				CausalBroadcastShared.addPendingMessage(clientMessage);
+				CausalBroadcastShared.checkPendingMessages();
+			}
+		}
+//    			CausalBroadcastShared.commitCausalMessage(clientMessage);
 		/*
-		 * ServentInfo senderInfo = clientMessage.getOriginalSenderInfo(); ServentInfo
-		 * lastSenderInfo = clientMessage.getRoute().size() == 0 ?
-		 * clientMessage.getOriginalSenderInfo() :
-		 * clientMessage.getRoute().get(clientMessage.getRoute().size()-1);
 		 * 
-		 * String text = String.format("Got %s from %s causally broadcast by %s\n",
-		 * clientMessage.getMessageText(), lastSenderInfo, senderInfo);
-		 * AppConfig.timestampedStandardPrint(text);
-		 */
-
-		/*
 		 * Uncomment the next line and comment out the two afterwards to see what
 		 * happens when causality is broken.
 		 */
-//			CausalBroadcastShared.commitCausalMessage(clientMessage);
 
-		CausalBroadcastShared.addPendingMessage(clientMessage);
-		CausalBroadcastShared.checkPendingMessages();
 	}
+
 }

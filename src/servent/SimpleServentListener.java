@@ -23,7 +23,6 @@ public class SimpleServentListener implements Runnable, Cancellable {
 	private volatile boolean working = true;
 
 	private SnapshotCollector snapshotCollector;
-	private Object lock = new Object();
 
 	public SimpleServentListener(SnapshotCollector snapshotCollector) {
 		this.snapshotCollector = snapshotCollector;
@@ -71,15 +70,18 @@ public class SimpleServentListener implements Runnable, Cancellable {
 				 * handlers, we will, because that way is much simpler and less error prone.
 				 */
 				switch (clientMessage.getMessageType()) {
-				case ACHARYA_ASK_AMOUNT:
+				case ACHARYA_MARKER:
 				case ACHARYA_TELL_AMOUNT:
-				case ALAGAR_ASK_AMOUNT:
-				case ALAGAR_TELL_AMOUNT:
+				case ALAGAR_MARKER:
+				case DONE:
+				case TERMINATE:
 				case TRANSACTION:
-					messageHandler = new CausalBroadcastHandler(clientMessage, snapshotCollector,);
+					messageHandler = new CausalBroadcastHandler(clientMessage);
 					break;
 				case POISON:
 					break;
+				default:
+                    throw new IllegalStateException("Unexpected value: " + clientMessage.getMessageType());
 				}
 
 				threadPool.submit(messageHandler);

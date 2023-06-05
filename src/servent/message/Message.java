@@ -41,7 +41,7 @@ public interface Message extends Serializable {
 	 * Information about the original sender. If <code>makeMeASender</code> is
 	 * invoked on this object, this attribute will not be changed.
 	 */
-	ServentInfo getSenderInfo();
+	ServentInfo getOriginalSenderInfo();
 
 	/**
 	 * If a servent uses <code>makeMeASender</code> when resending a message, it
@@ -59,7 +59,7 @@ public interface Message extends Serializable {
 	 * Message color - white means that the message was sent before a local snapshot
 	 * was created, and red (non-white) means it is after.
 	 */
-	boolean isWhite();
+//	boolean isWhite();
 
 	/**
 	 * Message type. Mainly used to decide which handler will work on this message.
@@ -88,18 +88,13 @@ public interface Message extends Serializable {
 	 * receiver being changed to the one with the specified <code>id</code>.
 	 */
 	Message changeReceiver(Integer newReceiverId);
-
-	/**
-	 * Alters the message and returns a new copy with everything intact, except the
-	 * color being changed to red.
-	 */
-	Message setRedColor();
+//	Message setRedColor();
 
 	/**
 	 * Alters the message and returns a new copy with everything intact, except the
 	 * color being changed to white.
 	 */
-	Message setWhiteColor();
+//	Message setWhiteColor();
 
 	/**
 	 * This method is invoked by the frameworks sender code. It is invoked exactly
